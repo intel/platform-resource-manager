@@ -120,7 +120,7 @@ class GmmFense:
         """
         Get threshold by looing into each gaussian
             is_upper - If True, upper fense is returned
-            is_strict - If True, use min(3_std_threshold, max(data))
+            is_strict - If True, pick less aggressive value from [3_std_threshold, max/min of data points of that gaussian]
                         If False, always 3_std_threshold
             span - how many sigma span for normal fense
         """
