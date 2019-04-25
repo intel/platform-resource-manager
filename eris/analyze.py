@@ -75,8 +75,9 @@ def process(args):
         process_offline_data(args, analyzer)
     else:
         strict = True if args.fense_type == 'gmm-strict' else False
+        use_origin = True if args.fense_method == 'gmm-origin' else False
         analyzer.build_model(args.util_file, args.metric_file,
-                             args.thresh, strict, args.verbose)
+                             args.thresh, strict, use_origin, args.verbose)
 
 
 def main():
@@ -94,6 +95,9 @@ def main():
                         action='store_true')
     parser.add_argument('-t', '--thresh', help='threshold used in outlier\
                         detection', type=int, default=4)
+    parser.add_argument('-a', '--fense-method', help='fense method used in outlier\
+                        detection', choices=['gmm-origin', 'gmm-standard'],
+                        default='gmm-standard')
     parser.add_argument('-f', '--fense-type', help='fense type used in outlier\
                         detection', choices=['gmm-strict', 'gmm-normal'],
                         default='gmm-strict')

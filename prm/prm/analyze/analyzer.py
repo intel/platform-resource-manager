@@ -109,14 +109,22 @@ class Analyzer:
                 'std': std.item(),
                 'bar': np.float64(fbar).item()}
 
-    def _get_fense(self, mdf, is_upper, strict, span):
+    def _get_fense_origin(self, mdf, is_upper, strict, span):
         gmm_fense = GmmFense(mdf.values.reshape(-1, 1))
         if strict:
             return gmm_fense.get_strict_fense(is_upper, span)
 
         return gmm_fense.get_normal_fense(is_upper, span)
 
-    def _build_thresh(self, jdata, span, strict, verbose):
+    def _get_fense(self, mdf, is_upper, strict, span, use_origin):
+        if use_origin is True:
+            return self._get_fense_origin(mdf, is_upper, strict, span)
+
+        gmm_fense = GmmFense(mdf.values.reshape(-1, 1))
+
+        return gmm_fense.get_gaussian_round_fense(is_upper, strict, span)
+
+    def _build_thresh(self, jdata, span, strict, use_origin, verbose):
         job = jdata['name'].values[0]
         cpu_no = self.workload_meta[job]['cpus']
         utilization_partition = self.partition_utilization(
@@ -134,16 +142,16 @@ class Analyzer:
                                (jdata[Metric.UTIL] <= higher_bound)]
                 cpi = jdataf[Metric.CPI]
                 cpi_thresh = self._get_fense(cpi, True, strict,
-                                             span)
+                                             span, use_origin)
                 mpki = jdataf[Metric.L3MPKI]
                 mpki_thresh = self._get_fense(mpki, True, strict,
-                                              span)
+                                              span, use_origin)
                 if Metric.MB in jdataf.columns:
                     memb = jdataf[Metric.MB]
                 else:
                     memb = jdataf[Metric.MBL] + jdataf[Metric.MBR]
                 mb_thresh = self._get_fense(memb, False, strict,
-                                            span)
+                                            span, use_origin)
                 thresh = {
                     'util_start': lower_bound.item(),
                     'util_end': higher_bound.item(),
@@ -154,15 +162,16 @@ class Analyzer:
                 if Metric.L2SPKI in jdataf.columns:
                     l2spki = jdataf[Metric.L2SPKI]
                     l2spki_thresh = self._get_fense(l2spki, True, strict,
-                                                    span)
+                                                    span, use_origin)
                     thresh['l2spki'] = l2spki_thresh.item()
                 if Metric.MSPKI in jdataf.columns:
                     mspki = jdataf[Metric.MSPKI]
                     mspki_thresh = self._get_fense(mspki, True, strict,
-                                                   span)
+                                                   span, use_origin)
                     thresh['mspki'] = mspki_thresh.item()
                 self.threshold[job]['thresh'].append(thresh)
-            except Exception:
+            except Exception as e:
+                print(str(e))
                 if verbose:
                     log.exception('error in build threshold util=%r (%r)',
                                   job, util)
@@ -193,7 +202,7 @@ class Analyzer:
         return self.threshold[job]['tdp'] if job in self.threshold else {}
 
     def build_model(self, util_file=UTIL_FILE, metric_file=METRIC_FILE,
-                    span=4, strict=True, verbose=False):
+                    span=4, strict=True, use_origin=False, verbose=False):
         if self.threshold:
             return
 
@@ -204,7 +213,7 @@ class Analyzer:
             self.threshold[cname] = {"tdp": {}, "thresh": []}
             jdata = mdf[mdf['name'] == cname]
             self._build_tdp_thresh(jdata)
-            self._build_thresh(jdata, span, strict, verbose)
+            self._build_thresh(jdata, span, strict, use_origin, verbose)
 
         if verbose:
             log.warn(self.threshold)
