@@ -130,17 +130,13 @@ class GmmFense:
         if is_upper is True:
                 index_sort_means = np.flipud(index_sort_means)
 
+        threshold = -1.0
         last_threshold = -1.0
         last_percentage = -1.0
         total = float(self.data.shape[0])
         
-        threshold = -1.0
-
         for i in index_sort_means:
             gaussian_index = i[0]
-            #print(mixture_index, self.gmm.means_[mixture_index][0], math.sqrt(self.gmm.covariances_[mixture_index][0]), self.gmm.weights_[mixture_index])
-            #print((labels == i).sum())
-
             gaussian_data = np.take(self.data, axis=0, indices=np.where(labels == gaussian_index))
             mean = self.gmm.means_[gaussian_index][0]
             std = math.sqrt(self.gmm.covariances_[gaussian_index][0])
