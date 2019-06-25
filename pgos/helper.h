@@ -24,7 +24,8 @@ struct cgroup {
     int ret;
     char* path;
     char* cid;
-    uint64_t instructions, cycles, llc_misses, stalls_l2_misses, stalls_memory_load, llc_occupancy;
+    uint64_t* perf_result;
+    uint64_t llc_occupancy;
     double mbm_local, mbm_remote;
 };
 
@@ -38,7 +39,15 @@ struct context {
     struct cgroup *cgroups;
 };
 
+struct init_context {
+    char* path;
+    int *perf_counter_count;
+    char** perf_counter_name; 
+};
+
 struct cgroup* get_cgroup(struct cgroup *cgroups, int index);
+void set_perf_counter_name(struct init_context *ctx, int index, char* name);
+void set_perf_result(struct cgroup *cgroup, int index, uint64_t value);
 
 void set_attr_disabled(struct perf_event_attr *attr, int disabled);
 #endif

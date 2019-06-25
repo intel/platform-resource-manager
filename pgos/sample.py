@@ -23,11 +23,7 @@ class cgroup(Structure):
     _fields_ = [("ret", c_int),
                 ("path", c_char_p), 
                 ("cid", c_char_p), 
-                ("instructions", c_ulonglong),
-                ("cycles", c_ulonglong),
-                ("llc_misses", c_ulonglong),
-                ("stall_l2_misses", c_ulonglong),
-                ("stalls_memory_load", c_ulonglong),
+                ("perf_result", POINTER(c_ulonglong)),
                 ("llc_occupancy", c_ulonglong),
                 ("mbm_local", c_double),
                 ("mbm_remote", c_double)]
@@ -38,7 +34,14 @@ class context(Structure):
                 ("period", c_int),
                 ("cgroup_count", c_int),
                 ("timestamp", c_ulonglong),
-                ("cgroups", POINTER(cgroup))]
+                ("cgroups", POINTER(cgroup)),
+                ("perf_counter_count", c_int),
+                ("perf_counter_name", POINTER(c_char_p))]
+
+class init_context(Structure):
+    _fields_ = [("path", c_char_p),
+                ("perf_counter_count", POINTER(c_int)),
+                ("perf_counter_name", POINTER(c_char_p))]
 
 lib = cdll.LoadLibrary('./libpgos.so')
 lib.collect.argtypes = [context]
@@ -46,28 +49,33 @@ lib.collect.restype = context
 
 
 cg0 = cgroup()
-cg0.path = '/sys/fs/cgroup/perf_event/docker/20a0d36eb400bf1590c129bc62c94f45794d9057e6a5074fa66c6277bc45b658/'.encode()
-cg0.cid = 'cassandra'.encode()
+cg0.path = '/sys/fs/cgroup/perf_event/docker/71546547af31a748be4de938b70131d7375ac452dd0cc1099109d3070605aae2/'.encode()
+cg0.cid = 'memcached'.encode()
+cg0.perf_result = (c_ulonglong * 5)(0, 0, 0, 0, 0)
 
-cg1 = cgroup()
-cg1.path = '/sys/fs/cgroup/perf_event/docker/ced2f4992c4ca36ace9161cd061707125847e97e72c6bc692ffd431989d29e28/'.encode()
-cg1.cid = 'memcache'.encode()
 ctx = context()
 ctx.core = 22
 ctx.period = 20000
-ctx.cgroup_count = 2
-ctx.cgroups = (cgroup * 2)(cg0, cg1)
+ctx.cgroup_count = 1
+ctx.cgroups = (cgroup * 1)(cg0)
 
-ret = lib.pgos_init()
-print(ret)
 
-for i in range(5):
-      ret = lib.collect(ctx)
-      cg = ret.cgroups[0]
-      print(cg.ret, cg.instructions, cg.cycles, cg.llc_misses, cg.stall_l2_misses,
-            cg.stalls_memory_load, cg.llc_occupancy, cg.mbm_local, cg.mbm_remote)
-      cg = ret.cgroups[1]
-      print(cg.ret, cg.instructions, cg.cycles, cg.llc_misses, cg.stall_l2_misses,
-            cg.stalls_memory_load, cg.llc_occupancy, cg.mbm_local, cg.mbm_remote)
+init_ctx = init_context()
+init_ctx.path = "counters.json"
+init_ctx.perf_counter_name = (c_char_p * 20)()
+init_ctx.perf_counter_count = (c_int * 1)(0)
+for i in range (0, 20):
+    init_ctx.perf_counter_name[i] = bytearray(64).decode()
+
+ret = lib.pgos_init(init_ctx)
+
+print (init_ctx.perf_counter_count[0])
+print (init_ctx.perf_counter_name[0],init_ctx.perf_counter_name[1],init_ctx.perf_counter_name[2],init_ctx.perf_counter_name[3],init_ctx.perf_counter_name[4])
+
+for i in range(1):
+    ret = lib.collect(ctx)
+    cg = ret.cgroups[0]
+    print(cg.ret, cg.perf_result[0], cg.perf_result[1], cg.perf_result[2], cg.perf_result[3], cg.perf_result[4],
+        cg.llc_occupancy, cg.mbm_local, cg.mbm_remote)
 
 lib.pgos_finalize()

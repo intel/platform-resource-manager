@@ -33,6 +33,20 @@ import (
 	"unsafe"
 )
 
+type PerfEventCounter struct {
+	EventCode, UMask                      uint
+	EventName                             string
+	CounterMask, Invert, EdgeDetect, PEBS uint
+}
+
+func (this *PerfEventCounter) GetConfig() C.__u64 {
+	return C.__u64(this.EventCode |
+		(this.UMask << 8) |
+		(this.EdgeDetect << 18) |
+		(this.Invert)<<23 |
+		(this.CounterMask << 24))
+}
+
 func perfEventOpen(attr C.struct_perf_event_attr,
 	pid, cpu, groupFd, flags uintptr) (uintptr, C.int) {
 	fd, _, err := syscall.Syscall6(syscall.SYS_PERF_EVENT_OPEN, uintptr(unsafe.Pointer(&attr)),
@@ -55,17 +69,17 @@ type PerfStruct struct {
 	Size        uint64
 	TimeEnabled uint64
 	TimeRunning uint64
-	Data        [5]struct {
+	Data        [20]struct {
 		Value uint64
 		ID    uint64
 	}
 }
 
-func OpenLeader(cgroupFd uintptr, cpu uintptr, perfType C.uint32_t, perfConfig C.uint64_t) (uintptr, C.int) {
+func OpenLeader(cgroupFd uintptr, cpu uintptr, pec PerfEventCounter) (uintptr, C.int) {
 	leaderAttr := C.struct_perf_event_attr{
-		_type:       C.__u32(perfType),
+		_type:       C.__u32(C.PERF_TYPE_RAW),
 		size:        C.__u32(C.def_PERF_ATTR_SIZE_VER5),
-		config:      C.__u64(C.get_config_of_event(perfType, perfConfig)),
+		config:      pec.GetConfig(),
 		sample_type: C.PERF_SAMPLE_IDENTIFIER,
 		read_format: C.PERF_FORMAT_GROUP |
 			C.PERF_FORMAT_TOTAL_TIME_ENABLED |
@@ -76,11 +90,11 @@ func OpenLeader(cgroupFd uintptr, cpu uintptr, perfType C.uint32_t, perfConfig C
 	return perfEventOpen(leaderAttr, cgroupFd, cpu, ^uintptr(0), C.PERF_FLAG_PID_CGROUP|C.PERF_FLAG_FD_CLOEXEC)
 }
 
-func OpenFollower(leader uintptr, cpu uintptr, perfType C.uint32_t, perfConfig C.uint64_t) (uintptr, C.int) {
+func OpenFollower(leader uintptr, cpu uintptr, pec PerfEventCounter) (uintptr, C.int) {
 	followerAttr := C.struct_perf_event_attr{
-		_type:       C.__u32(perfType),
+		_type:       C.__u32(C.PERF_TYPE_RAW),
 		size:        C.__u32(C.def_PERF_ATTR_SIZE_VER5),
-		config:      C.__u64(C.get_config_of_event(perfType, perfConfig)),
+		config:      pec.GetConfig(),
 		sample_type: C.PERF_SAMPLE_IDENTIFIER,
 		read_format: C.PERF_FORMAT_GROUP |
 			C.PERF_FORMAT_TOTAL_TIME_ENABLED |

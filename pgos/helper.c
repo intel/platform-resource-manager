@@ -16,6 +16,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 #include "helper.h"
+#include <string.h>
+#include <stdio.h>
 
 void set_attr_disabled(struct perf_event_attr *attr, int disabled) {
 	attr->disabled = disabled;
@@ -23,4 +25,12 @@ void set_attr_disabled(struct perf_event_attr *attr, int disabled) {
 
 struct cgroup* get_cgroup(struct cgroup *cgroups, int index) {
     return cgroups + index;
+}
+
+void set_perf_result(struct cgroup *cgroup, int index, uint64_t value) {
+	cgroup->perf_result[index] = value;
+}
+
+void set_perf_counter_name(struct init_context *ctx, int index, char* name) {
+	strncpy((ctx->perf_counter_name)[index], name, strlen(name));
 }

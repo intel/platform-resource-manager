@@ -30,30 +30,12 @@
 #include <errno.h>
 #include "perf.h"
 
-struct perf_event_spec{
-	uint8_t event;
-	uint8_t umask;
-	uint8_t inv;
-	uint8_t cmask;
-	uint8_t edge;
-};
+int UNKNOWN = 0;
+int BROADWELL = 1;
+int SKYLAKE = 2;
+int CASCADELAKE = 3;
 
-struct x86_cpu_info {
-	uint32_t display_model;
-	uint32_t display_family;
-};
-
-static const struct perf_event_spec skl_spec[] = {
-	{.event = 0xA3, .umask = 0x05, .cmask = 5},
-	{.event = 0xA3, .umask = 0x14, .cmask = 20},
-};
-
-static const struct perf_event_spec brw_spec[] = {
-	{.event = 0xA3, .umask = 0x05, .cmask = 5},
-	{.event = 0xA3, .umask = 0x06, .cmask = 6},
-};
-
-struct x86_cpu_info get_x86_cpu_info(void) {
+int get_cpu_family() {
 	uint32_t eax, ebx, ecx, edx;
 	__cpuid(1, eax, ebx, ecx, edx);
 	const uint32_t model = (eax >> 4) & 0xF;
@@ -68,38 +50,18 @@ struct x86_cpu_info get_x86_cpu_info(void) {
 	if ((family == 0x6) || (family == 0xF)) {
 		display_model += extended_model << 4;
 	}
-	return (struct x86_cpu_info) {
-		.display_model = display_model,
-			.display_family = display_family
-	};
-}
-
-uint64_t get_config_of_event(uint32_t type,uint64_t event) {
-	if (type == PERF_TYPE_HARDWARE) {
-		return event;
-	}
-
-	struct x86_cpu_info cpu_info = get_x86_cpu_info();
-	struct perf_event_spec spec;
-	//printf("CPU family %x CPU model %x\n", cpu_info.display_family, cpu_info.display_model);
-	if (cpu_info.display_family == 0x06) {
-		switch (cpu_info.display_model) {
+	if (display_family == 0x06) {
+		switch (display_model) {
 			case 0x4E:
 			case 0x5E:
 			case 0x55:
-				/* Skylake */
-				spec = skl_spec[event];
-				break;
+				return SKYLAKE;
 			case 0x3D:
 			case 0x47:
 			case 0x4F:
 			case 0x56:
-				/* Broadwell */
-				spec = brw_spec[event];
-				break;
+				return BROADWELL;
 		}
 	}
-	return  ((uint32_t) spec.event) | (((uint32_t) spec.umask) << 8) | (((uint32_t) spec.edge) << 18) 
-		| (((uint32_t) spec.inv) << 23) | (((uint32_t) spec.cmask) << 24);	
+	return UNKNOWN;
 }
-

@@ -19,8 +19,8 @@ package main
 
 // #include <stdint.h>
 // #include <sys/types.h>
+// #include <stdlib.h>
 // #include <linux/perf_event.h>
-
 // #cgo CFLAGS: -fstack-protector-strong
 // #cgo CFLAGS: -fPIE -fPIC
 // #cgo CFLAGS: -O2 -D_FORTIFY_SOURCE=2
@@ -30,23 +30,20 @@ package main
 // #cgo LDFLAGS: -Wl,-z,relro
 // #cgo LDFLAGS: -Wl,-z,now
 // #include <pqos.h>
+// #include "perf.h"
 // #include "pgos.h"
 // #include "helper.h"
 import "C"
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"reflect"
 	"strings"
 	"syscall"
 	"time"
 	"unsafe"
-)
-
-type ModelSpecificEvent uint64
-
-const (
-	CYCLE_ACTIVITY_STALLS_L2_MISS ModelSpecificEvent = 0
-	CYCLE_ACTIVITY_STALLS_MEM_ANY ModelSpecificEvent = 1
 )
 
 const (
@@ -54,23 +51,18 @@ const (
 	ErrorCannotOpenCgroup    C.int = 1 << iota
 	ErrorCannotOpenTasks     C.int = 1 << iota
 	ErrorCannotPerfomSyscall C.int = 1 << iota
+	ErrorPerfInitFailure     C.int = 1 << iota
+)
+
+const (
+	UNKNOWN C.int = iota
+	BROADWELL
+	SKYLAKE
+	CASCADELAKE
 )
 
 var coreCount int
-var metricsDescription = []string{"instructions", "cycles", "LLC misses", "stalls L2 miss", "stalls memory load"}
-
-type PerfCounter struct {
-	Type   C.uint32_t
-	Config C.uint64_t
-}
-
-var counters = []PerfCounter{
-	PerfCounter{Type: C.PERF_TYPE_HARDWARE, Config: C.PERF_COUNT_HW_INSTRUCTIONS},
-	PerfCounter{Type: C.PERF_TYPE_HARDWARE, Config: C.PERF_COUNT_HW_CPU_CYCLES},
-	PerfCounter{Type: C.PERF_TYPE_HARDWARE, Config: C.PERF_COUNT_HW_CACHE_MISSES},
-	PerfCounter{Type: C.PERF_TYPE_RAW, Config: C.uint64_t(CYCLE_ACTIVITY_STALLS_L2_MISS)},
-	PerfCounter{Type: C.PERF_TYPE_RAW, Config: C.uint64_t(CYCLE_ACTIVITY_STALLS_MEM_ANY)},
-}
+var peCounters = []PerfEventCounter{}
 
 type Cgroup struct {
 	Index       int
@@ -85,8 +77,83 @@ type Cgroup struct {
 
 var pqosLog *os.File
 
+func conf2PerfEventCounter(c map[string]string) PerfEventCounter {
+	ret := PerfEventCounter{}
+
+	retAddr := reflect.ValueOf(&ret)
+	retElem := retAddr.Elem()
+	retType := reflect.TypeOf(ret)
+	for i := 0; i < retType.NumField(); i++ {
+		strValue := c[retType.Field(i).Name]
+		field := retElem.Field(i)
+		fieldType := retType.Field(i).Type
+		switch fieldType.String() {
+		case "string":
+			field.SetString(strValue)
+		case "uint":
+			var v uint64
+			if strings.HasPrefix(strValue, "0x") {
+				fmt.Sscanf(strValue, "0x%X", &v)
+			} else {
+				fmt.Sscanf(strValue, "%d", &v)
+			}
+			field.SetUint(v)
+		}
+	}
+	return ret
+}
+
+func handlePerfEventConfig(confPath string) C.int {
+	events := []map[string]string{}
+	conf, err := os.Open(confPath)
+	if err != nil {
+		return ErrorPerfInitFailure
+	}
+	defer conf.Close()
+	b, err := ioutil.ReadAll(conf)
+	if err != nil {
+		return ErrorPerfInitFailure
+	}
+	err = json.Unmarshal(b, &events)
+	if err != nil {
+		return ErrorPerfInitFailure
+	}
+	for i := 0; i < len(events); i++ {
+		peCounters = append(peCounters, conf2PerfEventCounter(events[i]))
+	}
+	return 0
+}
+
 //export pgos_init
-func pgos_init() C.int {
+func pgos_init(ctx C.struct_init_context) C.int {
+
+	var confPath string
+	if ctx.path != nil {
+		confPath = C.GoString(ctx.path)
+	} else {
+		family := C.get_cpu_family()
+		switch family {
+		case BROADWELL:
+			confPath = "./broadwell.json"
+		case SKYLAKE:
+			confPath = "./skylake.json"
+		case CASCADELAKE:
+			confPath = "./cascadelake.json"
+		default:
+			return ErrorPerfInitFailure
+		}
+	}
+	ret := handlePerfEventConfig(confPath)
+	if ret != 0 {
+		return ret
+	}
+	*ctx.perf_counter_count = C.int(len(peCounters))
+	for i := 0; i < len(peCounters); i++ {
+		name := C.CString(peCounters[i].EventName)
+		C.set_perf_counter_name(&ctx, C.int(i), name)
+		C.free(unsafe.Pointer(name))
+	}
+
 	pqosLog, err := os.OpenFile("/tmp/pqos.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return ErrorPqosInitFailure
@@ -141,13 +208,13 @@ func collect(ctx C.struct_context) C.struct_context {
 	time.Sleep(time.Duration(ctx.period) * time.Millisecond)
 	for j := 0; j < len(cgroups); j++ {
 		cg := C.get_cgroup(ctx.cgroups, C.int(cgroups[j].Index))
-		res := make([]uint64, len(counters))
+		res := make([]uint64, len(peCounters))
 		for k := 0; k < coreCount; k++ {
 			code := StopLeader(cgroups[j].Leaders[k])
 			cg.ret |= code
 			result, code := ReadLeader(cgroups[j].Leaders[k])
 			cg.ret |= code
-			for l := 0; l < len(counters); l++ {
+			for l := 0; l < len(peCounters); l++ {
 				res[l] += result.Data[l].Value
 			}
 		}
@@ -156,11 +223,9 @@ func collect(ctx C.struct_context) C.struct_context {
 		}
 		pgosValue := C.pgos_mon_poll(cgroups[j].PgosHandler)
 
-		cg.instructions = C.uint64_t(res[0])
-		cg.cycles = C.uint64_t(res[1])
-		cg.llc_misses = C.uint64_t(res[2])
-		cg.stalls_l2_misses = C.uint64_t(res[3])
-		cg.stalls_memory_load = C.uint64_t(res[4])
+		for i := 0; i < len(peCounters); i++ {
+			C.set_perf_result(cg, C.int(i), C.uint64_t(res[i]))
+		}
 
 		cg.llc_occupancy = pgosValue.llc / 1024
 		cg.mbm_local = C.double(float64(pgosValue.mbm_local_delta) / 1024.0 / 1024.0 / (float64(ctx.period) / 1000.0))
@@ -184,16 +249,16 @@ func NewCgroup(path string, cid string, index int) (*Cgroup, C.int) {
 		cgroupName = cid
 	}
 	leaders := make([]uintptr, 0, coreCount)
-	followers := make([]uintptr, 0, coreCount*(len(counters)-1))
+	followers := make([]uintptr, 0, coreCount*(len(peCounters)-1))
 
 	for i := 0; i < coreCount; i++ {
-		l, code := OpenLeader(cgroupFile.Fd(), uintptr(i), counters[0].Type, counters[0].Config)
+		l, code := OpenLeader(cgroupFile.Fd(), uintptr(i), peCounters[0])
 		if code != 0 {
 			return nil, code
 		}
 		leaders = append(leaders, l)
-		for j := 1; j < len(counters); j++ {
-			f, code := OpenFollower(l, uintptr(i), counters[j].Type, counters[j].Config)
+		for j := 1; j < len(peCounters); j++ {
+			f, code := OpenFollower(l, uintptr(i), peCounters[j])
 			if code != 0 {
 				return nil, code
 			}

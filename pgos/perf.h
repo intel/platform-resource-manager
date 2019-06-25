@@ -22,6 +22,6 @@
 #include <linux/perf_event.h>
 #include <stdint.h>
 
-uint64_t get_config_of_event(uint32_t type,uint64_t event);
+int get_cpu_family();
 
 #endif
