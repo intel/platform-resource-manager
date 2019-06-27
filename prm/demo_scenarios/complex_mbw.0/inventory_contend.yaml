@@ -1,0 +1,49 @@
+application_hosts:
+  vars:
+    workloads:
+      specjbb:
+        default:
+          count: 1
+          slo: 26000000
+          communication_port: 42000
+          backend:
+            count: 3
+            resources: {'cpu': 1, 'ram': 20, 'disk': 10}
+          injector:
+            count: 3
+            resources: {'cpu': 1, 'ram': 5, 'disk': 10}
+          controller:
+            resources: {'cpu': 1, 'ram': 5, 'disk': 10}
+      tensorflow_benchmark_train:
+        default:
+          count: 1
+          slo: 0.03
+          resources: {'cpu': 10, 'ram': 10, 'disk': 10}
+      tensorflow_benchmark_prediction:
+        small:
+          labels: {'type': 'best_efforts'}
+          count: 0
+          slo: 0.03
+          resources: {'cpu': 10, 'ram': 50, 'disk': 50}
+        big:
+          labels: {'type': 'best_efforts'}
+          #launch big only
+          count: 1
+          slo: 0.03
+          resources: {'cpu': 20, 'ram': 10, 'disk': 10}
+      cassandra_stress:
+        low:
+          labels: {'type': 'best_efforts'}
+          count: 1
+          communication_port: 9142
+          jmx_port: 7299
+          slo: 1000
+          cassandra:
+            image_name: cassandra
+            image_tag: 3.11.3
+            resources: {'cpu': 10, 'ram': 50, 'disk': 50}
+          cassandra_stress:
+            env:
+              threads: 8
+              #qps: @TODO in cassandra_stress.aurora
+            resources: {'cpu': 8, 'ram': 20, 'disk': 50}

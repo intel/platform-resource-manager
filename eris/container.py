@@ -23,6 +23,7 @@ from __future__ import print_function
 from __future__ import division
 
 import time
+import multiprocessing
 
 from collections import deque
 from itertools import islice
@@ -53,6 +54,7 @@ class Container(object):
         self.name = name
         self.pids = pids
         self.cpu_usage = 0
+        self.system_usage = 0
         self.utils = 0
         self.timestamp = 0.0
         self.thresh = thresh
@@ -162,20 +164,36 @@ class Container(object):
             pids - pid list of Container
         """
         self.pids = pids
-
+    
     def update_cpu_usage(self):
         """ calculate cpu usage of container """
         try:
+            total_usage = 0
+            system_usage = 0
+            cpu_util = 0.0
             cur = time.time() * 1e9
-            filename = path_join('/sys/fs/cgroup/cpu/docker',
-                                 self.cid, 'cpuacct.usage')
-            with open(filename, 'r') as f:
-                usage = int(f.read().strip())
-                if self.cpu_usage != 0:
-                    self.utils = (usage - self.cpu_usage) * 100 /\
-                        (cur - self.timestamp)
-                self.cpu_usage = usage
-                self.timestamp = cur
+
+            with open("/proc/stat") as f:
+                stats = [int(e) for e in f.readline().split()[1:]]
+                system_usage = sum(stats) * 1e9 / 100
+
+            cgroup_stat = path_join('/sys/fs/cgroup/cpu', self.parent_path,
+                                  self.con_path, 'cpuacct.usage')
+            
+            with open(cgroup_stat, 'r') as fi:
+                total_usage = int(fi.read().strip())
+
+            cpu_delta = total_usage - self.cpu_usage
+            system_delta = system_usage - self.system_usage
+            cpu_no = multiprocessing.cpu_count()
+
+            if cpu_delta > 0 and system_delta > 0:
+                cpu_util = (float(cpu_delta) / system_delta) * cpu_no * 100
+            
+            self.timestamp = cur 
+            self.utils = cpu_util
+            self.cpu_usage = total_usage
+            self.system_usage = system_usage
         except (ValueError, IOError):
             pass
 

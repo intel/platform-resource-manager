@@ -1,0 +1,26 @@
+# Fill needed IPs
+
+application_hosts:
+  hosts:
+    100.64.176.15:
+      env_uniq_id: 15
+      load_generator_host_ip: 100.64.176.27
+    100.64.176.16:
+      env_uniq_id: 16
+      load_generator_host_ip: 100.64.176.28
+    100.64.176.20:
+      env_uniq_id: 20
+      load_generator_host_ip: 100.64.176.28
+    100.64.176.19:
+      env_uniq_id: 19
+      load_generator_host_ip: 100.64.176.24
+  vars:
+    ansible_connection: local
+    ansible_ssh_user: ssg
+    ansible_user: ssg
+    # ---
+    cluster: example
+    role: root
+    image_tag: 68f506d0e83d8b4227e9da028b42a5528b9ccbdf
+    wrapper_kafka_brokers: 100.64.176.12
+    docker_registry: 100.64.176.12:80

@@ -1,0 +1,25 @@
+runner: !BuildRunner
+  prometheus_host: "10.239.157.129:9090"
+  cycle:    # default 3600s
+  time_range:    # defult 86400 secondsrunner: !BuildRunner
+  prometheus_host: "10.239.157.129:9090"
+  cycle:    # default 3600s
+  time_range:    # defult 86400 seconds
+  step:    # prometheus sample step, default 10 seconds
+  timeout:     # prometheus request timeout, default 1 seconds
+  database: !ModelDatabase
+    db_type: etcd    # 1) local 2)zookeeper 3)etcd
+    host: "10.239.157.1291:2379"     # required for zookeeper and etcd
+    namespace: ~
+    directory: ~
+    api_path: "/v3beta"     # for etcd, '/v3alpha' for 3.2.x etcd version, '/v3beta' or '/v3' for 3.3.x etcd version
+    timeout: 5.0     # for etcd, default 5.0 seconds
+    ssl: !SSL 
+      server_verify: false
+      client_cert_path: ~
+      client_key_path: ~
+  model: !DistriModel
+    span: 3
+    strict: false
+    use_origin: false
+    verbose: false

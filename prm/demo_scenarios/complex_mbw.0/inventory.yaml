@@ -8,29 +8,60 @@ application_hosts:
   vars:
     workloads:
       specjbb:
-        default:
+        jbb1:
           count: 1
           slo: 26000000
           communication_port: 42000
           backend:
-            count: 3
+            count: 1
             resources: {'cpu': 1, 'ram': 20, 'disk': 10}
           injector:
-            count: 3
+            count: 1
             resources: {'cpu': 1, 'ram': 5, 'disk': 10}
           controller:
             resources: {'cpu': 1, 'ram': 5, 'disk': 10}
+        jbb2:
+          count: 1
+          slo: 26000000
+          communication_port: 42001
+          backend:
+            count: 1
+            resources: {'cpu': 1, 'ram': 20, 'disk': 10}
+          injector:
+            count: 1
+            resources: {'cpu': 1, 'ram': 5, 'disk': 10}
+          controller:
+            resources: {'cpu': 1, 'ram': 5, 'disk': 10}
+        jbb3:
+          count: 1
+          slo: 26000000
+          communication_port: 42002
+          backend:
+            count: 1
+            resources: {'cpu': 1, 'ram': 20, 'disk': 10}
+          injector:
+            count: 1
+            resources: {'cpu': 1, 'ram': 5, 'disk': 10}
+          controller:
+            resources: {'cpu': 1, 'ram': 5, 'disk': 10}
+ 
       tensorflow_benchmark_train:
         default:
           count: 1
           slo: 0.03
           resources: {'cpu': 10, 'ram': 10, 'disk': 10}
       tensorflow_benchmark_prediction:
-        default:
+        small:
           labels: {'type': 'best_efforts'}
+          #launch small only
           count: 1
           slo: 0.03
-          resources: {'cpu': 20, 'ram': 50, 'disk': 50}
+          resources: {'cpu': 5, 'ram': 50, 'disk': 50}
+        big:
+          labels: {'type': 'best_efforts'}
+          count: 0
+          slo: 0.03
+          resources: {'cpu': 20, 'ram': 10, 'disk': 10}
       cassandra_stress:
         low:
           labels: {'type': 'best_efforts'}
@@ -41,7 +72,7 @@ application_hosts:
           cassandra:
             image_name: cassandra
             image_tag: 3.11.3
-            resources: {'cpu': 10, 'ram': 50, 'disk': 50}
+            resources: {'cpu': 5, 'ram': 50, 'disk': 50}
           cassandra_stress:
             env:
               threads: 8

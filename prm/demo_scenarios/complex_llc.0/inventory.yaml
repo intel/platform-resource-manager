@@ -24,9 +24,9 @@ application_hosts:
             env:
               sli_percentile: 95    # Note: 99 percentile is too sensitive
               threads: 2
-              connections: 24       # originally was 1, but that seems to be too small
+              connections: 1       # originally was 1, but that seems to be too small
               warmup_time: 30
-              qps: 40000            # that's original value (40k)
+              qps: 20000            # that's original value (40k)
             resources:
               cpu: 2
               ram: 10
@@ -47,7 +47,7 @@ application_hosts:
           mutilate:
             env:
               sli_percentile: 95
-              threads: 6
+              threads: 16
               connections: 16
               warmup_time: 30
               qps: 300000           # that's original value (300k)
@@ -80,6 +80,7 @@ application_hosts:
           count: 1
           communication_port: 9142
           jmx_port: 7299
+          storage_port: 7200
           slo: 1000
           cassandra:
             image_name: cassandra

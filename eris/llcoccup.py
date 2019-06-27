@@ -37,7 +37,7 @@ class LlcOccup(Resource):
             self.be_bmp = self.be_bmp[0:int(bitcnt / 2)]
             self.lc_bmp = self.lc_bmp[0:int(bitcnt / 2)]
         super(LlcOccup, self).__init__(init_level, int(bitcnt / 2) if
-                                       exclusive else bitcnt)
+                                       exclusive else bitcnt - 1)
 
     @staticmethod
     def _get_cbm_bit_count():

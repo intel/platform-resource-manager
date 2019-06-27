@@ -1,0 +1,33 @@
+runner: !AllocationRunner
+  node: !MesosNode
+    mesos_agent_endpoint: "http://127.0.0.1:5051"
+  action_delay: &action_delay 1.
+  metrics_storage: !LogStorage
+    output_filename: 'metrics.prom'
+    overwrite: true
+  anomalies_storage: !LogStorage
+    output_filename: 'anomalies.prom'
+    overwrite: true
+  allocations_storage: !LogStorage
+    output_filename: 'allocations.prom'
+    overwrite: true
+  allocator: !ResourceAllocator
+    database: !ModelDatabase # model database configuration
+      db_type: zookeeper    # 1) local 2)zookeeper 3)etcd
+      directory: ~     # required for local
+      host: "10.239.157.129:2181"     # required for zookeeper and etcd
+      namespace: ~     # for zookeeper, if none, using default model_distribution
+      ssl: !SSL        # enable ssl 
+        server_verify: false
+        client_cert_path: ~
+        client_key_path: ~
+    action_delay: *action_delay
+    agg_period: 20.          # aggregate platform metrics every 20s
+    model_pull_cycle: 180.   # pull model from configuration service (zookeeper or etcd) every 180 * 20 = 3600s
+    metric_file: "metric.csv" # local file path to save metrics, default save to same directory as agent working directory, if set to other path, make sure the parent directory is accessible  
+    enable_control: False    # if False, detects contention only, if True, enable resource allocation on best-efforts workloads
+    exclusive_cat: False     # when control is enabled, if True, Last Level cache way will not be shared between latency-critical and best-efforts workloads
+  rdt_enabled: True
+  extra_labels:
+    env_uniq_id: "15"
+    own_ip: "100.64.176.15"

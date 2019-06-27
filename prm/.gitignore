@@ -1,7 +1,7 @@
 /.eggs
 /.tox
 /dist
-/owca.egg-info
+/wca.egg-info
 /threshold.json
 /prm.egg-info
 /.pex-cache

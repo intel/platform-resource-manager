@@ -1,0 +1,16 @@
+runner: !BuildRunnerCSV
+  file_path: "data/file.csv"
+  database: !ModelDatabase
+    db_type: zookeeper    # 1) local 2)zookeeper 3)etcd
+    host: "10.239.157.129:2181"     # required for zookeeper and etcd
+    namespace: ~     # for zookeeper, if none, using default model_distribution
+    timeout: 5.0
+    ssl: !SSL
+      server_verify: false
+      client_cert_path: ~
+      client_key_path: ~
+  model: !DistriModel
+    span: 3
+    strict: false
+    use_origin: false
+    verbose: false
