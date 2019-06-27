@@ -16,19 +16,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // 
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <unistd.h>
-#include <string.h>
-#include <math.h>
-#include <sys/ioctl.h>
-#include <linux/perf_event.h>
 #include <cpuid.h>
 #include <asm/unistd.h>
 #include <stdint.h>
-#include <fcntl.h>
 #include <errno.h>
-#include "perf.h"
+#include "platform.h"
 
 int UNKNOWN = 0;
 int BROADWELL = 1;

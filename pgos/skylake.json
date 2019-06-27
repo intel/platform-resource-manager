@@ -108,5 +108,27 @@
     "L1_Hit_Indication": "0",
     "Errata": "0",
     "Offcore": "0"
+  },
+  {
+    "EventCode": "0x60",
+    "UMask": "0x10",
+    "EventName": "OFFCORE_REQUESTS_OUTSTANDING.L3_MISS_DEMAND_DATA_RD",
+    "BriefDescription": "Counts number of Offcore outstanding Demand Data Read requests that miss L3 cache in the superQ every cycle.",
+    "PublicDescription": "Counts number of Offcore outstanding Demand Data Read requests that miss L3 cache in the superQ every cycle.",
+    "Counter": "0,1,2,3",
+    "CounterHTOff": "0,1,2,3,4,5,6,7",
+    "SampleAfterValue": "2000003",
+    "MSRIndex": "0",
+    "MSRValue": "0",
+    "TakenAlone": "0",
+    "CounterMask": "0",
+    "Invert": "0",
+    "AnyThread": "0",
+    "EdgeDetect": "0",
+    "PEBS": "0",
+    "Data_LA": "0",
+    "L1_Hit_Indication": "0",
+    "Errata": "0",
+    "Offcore": "0"
   }
 ]

@@ -1,5 +1,3 @@
-package main
-
 // Copyright (C) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,10 +16,12 @@ package main
 // SPDX-License-Identifier: Apache-2.0
 //
 
+package main
+
 // #include <stdint.h>
 // #include <sys/types.h>
 // #include <linux/perf_event.h>
-// #include "perf.h"
+// #include "platform.h"
 // #include "helper.h"
 // uint32_t def_PERF_ATTR_SIZE_VER5 = PERF_ATTR_SIZE_VER5;
 //
@@ -39,11 +39,13 @@ type PerfEventCounter struct {
 	CounterMask, Invert, EdgeDetect, PEBS uint
 }
 
+var peCounters = []PerfEventCounter{}
+
 func (this *PerfEventCounter) GetConfig() C.__u64 {
 	return C.__u64(this.EventCode |
 		(this.UMask << 8) |
 		(this.EdgeDetect << 18) |
-		(this.Invert)<<23 |
+		(this.Invert << 23) |
 		(this.CounterMask << 24))
 }
 
