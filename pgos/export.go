@@ -82,8 +82,8 @@ func pgos_finalize() {
 	C.pqos_fini()
 }
 
-//export collect
-func collect(ctx C.struct_context) C.struct_context {
+//export pgos_collect
+func pgos_collect(ctx C.struct_context) C.struct_context {
 	ctx.ret = 0
 	coreCount = int(ctx.core)
 

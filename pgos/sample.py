@@ -44,8 +44,8 @@ class init_context(Structure):
                 ("perf_counter_name", POINTER(c_char_p))]
 
 lib = cdll.LoadLibrary('./libpgos.so')
-lib.collect.argtypes = [context]
-lib.collect.restype = context
+lib.pgos_collect.argtypes = [context]
+lib.pgos_collect.restype = context
 
 
 cg0 = cgroup()
@@ -75,7 +75,7 @@ for i in range(counter_count):
     print (init_ctx.perf_counter_name[i])
 
 for i in range(1):
-    ret = lib.collect(ctx)
+    ret = lib.pgos_collect(ctx)
     cg = ret.cgroups[0]
     for j in range(counter_count):
         print(cg.perf_result[j])
