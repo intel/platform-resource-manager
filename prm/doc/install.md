@@ -21,8 +21,8 @@ sub-module, you will build WCA with PRM plugin in next step.
 To build WCA/PRM, please use following commands:
 
 ```
-// get prm source code in 0.8.x branch
-git clone --branch 0.8.x https://github.com/intel/platform-resource-manager
+// get prm source code
+git clone https://github.com/intel/platform-resource-manager
 cd platform-resource-manager
 // get submodule wca source code
 git submodule update --init
@@ -128,7 +128,7 @@ Also there are some required task labels passed by WCA agent to PRM plugin:
 * `application`
 * `application_version_name`
 
-Please read WCA guide on [Generating additional labels for tasks](https://github.com/intel/workload-collocation-agent/blob/1.0.x/docs/detection.rst#id13) 
+Please read WCA guide on [Generating additional labels for tasks](https://github.com/intel/workload-collocation-agent/blob/1.0.x/docs/detection.rst#generating-additional-labels-for-tasks) 
 to understand how configure WCA to set those labels to indented values.
 
 The label `applicaiton_version_name` is required because multiple instances of the same application may exist and 
