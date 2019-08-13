@@ -12,6 +12,10 @@ flake8:
 	@echo Checking code quality.
 	pipenv run flake8 wca tests example workloads prm
 
+unit: 
+	@echo Running unit tests.
+	pipenv run env PYTHONPATH=.:workload-collocation-agent pytest tests
+
 package: 
 	@echo Building wca pex file.
 	-rm dist/wca-prm.pex
