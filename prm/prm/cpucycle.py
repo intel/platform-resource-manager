@@ -86,17 +86,16 @@ class CpuCycle(Resource):
             lc_utils - utilization of all LC workloads
             be_utils - utilization of all BE workloads
         """
-        margin = self.min_margin_ratio / self.ncpu
+        margin = self.min_margin_ratio * 100
 
         if self.verbose:
             log.debug('lcUtils: %i, beUtils: %i, margin: %i, quota max %i',
-                      lc_utils, be_utils, margin * self.ncpu * 100,
-                      self.quota_max * self.ncpu * 100)
+                      lc_utils, be_utils, margin, self.quota_max * self.ncpu * 100)
 
         exceed = lc_utils == 0 or\
             lc_utils + be_utils + margin > self.quota_max * self.ncpu * 100
 
-        hold = lc_utils + be_utils + margin + self.quota_step >=\
-            self.quota_max * self.ncpu * 100
+        hold = lc_utils + be_utils + margin >=\
+            (self.quota_max - self.quota_step) * self.ncpu * 100
 
         return (exceed, hold)
