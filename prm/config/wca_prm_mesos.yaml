@@ -1,10 +1,14 @@
 runner: !AllocationRunner
-  node: !MesosNode
-    mesos_agent_endpoint: "http://127.0.0.1:5051"
-  action_delay: &action_delay 1.
-  metrics_storage: !LogStorage
-    output_filename: 'metrics.prom'
-    overwrite: true
+  measurement_runner: !MeasurementRunner
+    node: !MesosNode
+      mesos_agent_endpoint: "http://127.0.0.1:5051"
+    metrics_storage: !LogStorage
+      output_filename: 'metrics.prom'
+      overwrite: true
+    rdt_enabled: True
+    extra_labels:
+      env_uniq_id: "15"
+      own_ip: "100.64.176.15"
   anomalies_storage: !LogStorage
     output_filename: 'anomalies.prom'
     overwrite: true
@@ -27,7 +31,3 @@ runner: !AllocationRunner
     metric_file: "metric.csv" # local file path to save metrics, default save to same directory as agent working directory, if set to other path, make sure the parent directory is accessible  
     enable_control: False    # if False, detects contention only, if True, enable resource allocation on best-efforts workloads
     exclusive_cat: False     # when control is enabled, if True, Last Level cache way will not be shared between latency-critical and best-efforts workloads
-  rdt_enabled: True
-  extra_labels:
-    env_uniq_id: "15"
-    own_ip: "100.64.176.15"
