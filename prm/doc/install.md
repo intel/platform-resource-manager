@@ -39,16 +39,20 @@ The example WCA/PRM agent configuration file is ```wca_prm_mesos.yaml```, in thi
 agent works with Mesos worker node and pull the contention detection model from zookeeper service every 3600 seconds and detects 
 workload resource contention without allocation control. 
 
-For more detail about WCA configuration. Please refer to [WCA Configuration](https://github.com/intel/workload-collocation-agent/blob/1.0.x/README.rst#id16) 
+For more detail about WCA configuration. Please refer to [WCA Configuration](https://github.com/intel/workload-collocation-agent/blob/b0b8fcdae47795b35522d66e7d3ed067a5af6de3/docs/allocation.rst#configuration) 
 
 ```yaml
 runner: !AllocationRunner
-  node: !MesosNode
-    mesos_agent_endpoint: "http://127.0.0.1:5051"
-  action_delay: &action_delay 1.
-  metrics_storage: !LogStorage
-    output_filename: 'metrics.prom'
-    overwrite: true
+  measurement_runner: !MeasurementRunner
+    node: !MesosNode
+      mesos_agent_endpoint: "http://127.0.0.1:5051"
+    metrics_storage: !LogStorage
+      output_filename: 'metrics.prom'
+      overwrite: true
+    rdt_enabled: True
+    extra_labels:
+      env_uniq_id: "15"
+      own_ip: "100.64.176.15"
   anomalies_storage: !LogStorage
     output_filename: 'anomalies.prom'
     overwrite: true
@@ -71,10 +75,6 @@ runner: !AllocationRunner
     metric_file: "metric.csv" # local file path to save metrics, default save to same directory as agent working directory, if set to other path, make sure the parent directory is accessible  
     enable_control: False    # if False, detects contention only, if True, enable resource allocation on best-efforts workloads
     exclusive_cat: False     # when control is enabled, if True, Last Level cache way will not be shared between latency-critical and best-efforts workloads
-  rdt_enabled: True
-  extra_labels:
-    env_uniq_id: "15"
-    own_ip: "100.64.176.15"
 ```
 
 ## Run
