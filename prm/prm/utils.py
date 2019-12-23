@@ -17,13 +17,13 @@
 
 from typing import Tuple
 
-from wca.detectors import TasksData, TaskMeasurements, TaskAllocation
+from wca.detectors import TasksData, TaskMeasurements, TaskAllocations
 from wca.nodes import TaskId, TaskResources, TaskLabels
 
 TasksLabels = [TaskId, TaskLabels]
 TasksResources = [TaskId, TaskResources]
 TasksMeasurements = [TaskId, TaskMeasurements]
-TasksAllocations = [TaskId, TaskAllocation]
+TasksAllocations = [TaskId, TaskAllocations]
 
 
 def extract_tasks_data(tasks_data: TasksData) -> Tuple[
