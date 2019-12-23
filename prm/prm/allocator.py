@@ -20,9 +20,7 @@ import numpy as np
 from typing import List
 
 from wca.platforms import Platform
-from wca.detectors import ContentionAnomaly, TasksMeasurements
-from wca.detectors import TasksResources, TasksLabels
-from wca.detectors import ContendedResource
+from wca.detectors import ContentionAnomaly, ContendedResource, TasksData
 from wca.metrics import Metric as WCAMetric
 from wca.allocators import Allocator, TasksAllocations
 
@@ -33,6 +31,8 @@ from prm.llcoccup import LlcOccup
 from prm.membw import MemoryBw
 from prm.analyze.analyzer import Metric, Analyzer, ThreshType
 from prm.model_distribution.db import ModelDatabase, correct_key_characters
+from prm.utils import (extract_tasks_data, TasksLabels, TasksResources,
+                       TasksMeasurements)
 
 log = logging.getLogger(__name__)
 
@@ -365,10 +365,11 @@ class ResourceAllocator(Allocator):
     def allocate(
             self,
             platform: Platform,
-            tasks_measurements: TasksMeasurements,
-            tasks_resources: TasksResources,
-            tasks_labels: TasksLabels,
-            tasks_allocs: TasksAllocations):
+            tasks_data: TasksData):
+
+        tasks_resources, tasks_labels, \
+                tasks_measurements, tasks_allocs = extract_tasks_data(tasks_data)
+
         log.debug('prm allocate called...')
         log.debug('platform=%r', platform)
         log.debug('tasks_resources=%r', tasks_resources)
