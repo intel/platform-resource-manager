@@ -15,8 +15,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Tuple
-
 from wca.detectors import TasksData, TaskMeasurements, TaskAllocations
 from wca.nodes import TaskId, TaskResources, TaskLabels
 
@@ -26,8 +24,7 @@ TasksMeasurements = [TaskId, TaskMeasurements]
 TasksAllocations = [TaskId, TaskAllocations]
 
 
-def extract_tasks_data(tasks_data: TasksData) -> Tuple[
-        TasksResources, TasksLabels, TasksMeasurements, TasksAllocations]:
+def extract_tasks_data(tasks_data: TasksData):
     """ Extracts provided tasks data to tuple. """
     tasks_resources: TasksResources = {}
     tasks_labels: TasksLabels = {}
