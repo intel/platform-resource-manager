@@ -21,14 +21,14 @@ from typing import List
 
 from wca import detectors
 from wca.platforms import Platform
-from wca.detectors import ContentionAnomaly, TasksMeasurements
-from wca.detectors import TasksResources, TasksLabels
-from wca.detectors import ContendedResource
+from wca.detectors import ContentionAnomaly, ContendedResource, TasksData
 from wca.metrics import Metric as WCAMetric
 
 from prm.container import Container
 from prm.analyze.analyzer import Metric, Analyzer, ThreshType
 from prm.model_distribution.db import ModelDatabase, correct_key_characters
+from prm.utils import (extract_tasks_data, TasksLabels, TasksResources,
+                       TasksMeasurements)
 
 log = logging.getLogger(__name__)
 
@@ -312,11 +312,14 @@ class ContentionDetector(detectors.AnomalyDetector):
     def detect(
             self,
             platform: Platform,
-            tasks_measurements: TasksMeasurements,
-            tasks_resources: TasksResources,
-            tasks_labels: TasksLabels):
+            tasks_data: TasksData):
+
+        tasks_resources, tasks_labels, \
+                tasks_measurements, tasks_allocations = extract_tasks_data(tasks_data)
+
         log.debug('prm detect called...')
         log.debug('task_labels=%r', tasks_labels)
+
         self.counter += 1
         if self.counter == self.agg_cnt:
             self.counter = 0

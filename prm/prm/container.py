@@ -121,21 +121,22 @@ class Container:
             return dlt if dlt > 0 else 0
 
         if self.cpu_usage != 0:
-            self.util = (measurements[MetricName.CPU_USAGE_PER_TASK] -
+            self.util = (measurements[MetricName.TASK_CPU_USAGE_SECONDS] -
                          self.cpu_usage) * 100 / ((timestamp - self.usg_tt) * 1e9)
-        self.cpu_usage = measurements[MetricName.CPU_USAGE_PER_TASK]
+        self.cpu_usage = measurements[MetricName.TASK_CPU_USAGE_SECONDS]
         self.usg_tt = timestamp
 
-        if measurements.get(MetricName.LLC_OCCUPANCY, 0) > 0:
-            self.total_llc_occu += measurements[MetricName.LLC_OCCUPANCY]
+        if measurements.get(MetricName.TASK_LLC_OCCUPANCY_BYTES, 0) > 0:
+            self.total_llc_occu += measurements[MetricName.TASK_LLC_OCCUPANCY_BYTES]
             self.llc_cnt += 1
         if self.measurements and agg:
             metrics = self.metrics
             delta_t = timestamp - self.timestamp
-            metrics[Metric.CYC] = delta(MetricName.CYCLES)
-            metrics[Metric.INST] = delta(MetricName.INSTRUCTIONS)
-            metrics[Metric.L3MISS] = delta(MetricName.CACHE_MISSES)
-            metrics[Metric.MEMSTALL] = delta(MetricName.MEMSTALL)
+            metrics[Metric.CYC] = delta(MetricName.TASK_CYCLES)
+            metrics[Metric.INST] = delta(MetricName.TASK_INSTRUCTIONS)
+            metrics[Metric.L3MISS] = delta(MetricName.TASK_CACHE_MISSES)
+            # TODO: Check!
+            metrics[Metric.MEMSTALL] = delta(MetricName.TASK_STALLED_MEM_LOADS)
             if self.llc_cnt == 0:
                 metrics[Metric.L3OCC] = 0
             else:
@@ -152,10 +153,11 @@ class Container:
                     metrics[Metric.INST]
                 metrics[Metric.MSPKI] = metrics[Metric.MEMSTALL] * 1000 /\
                     metrics[Metric.INST]
-            metrics[Metric.UTIL] = delta(MetricName.CPU_USAGE_PER_TASK) * 100 / (delta_t * 1e9)
-            if measurements.get(MetricName.MEM_BW, 0) > 0:
-                metrics[Metric.MB] = (measurements[MetricName.MEM_BW] -
-                                      self.measurements.get(MetricName.MEM_BW, 0)) /\
+            metrics[Metric.UTIL] = delta(MetricName.TASK_CPU_USAGE_SECONDS) * 100 / (delta_t * 1e9)
+            if measurements.get(MetricName.TASK_MEM_BANDWIDTH_BYTES, 0) > 0:
+                metrics[Metric.MB] = (measurements[MetricName.TASK_MEM_BANDWIDTH_BYTES] -
+                                      self.measurements.get(
+                                          MetricName.TASK_MEM_BANDWIDTH_BYTES, 0)) /\
                     1024 / 1024 / delta_t
             if metrics[Metric.UTIL] == 0:
                 metrics[Metric.NF] = 0
